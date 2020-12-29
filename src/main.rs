@@ -6,7 +6,7 @@ use amethyst::network::simulation::{DeliveryRequirement, UrgencyRequirement};
 use amethyst::network::simulation::laminar::LaminarConfig;
 use std::time::Duration;
 
-pub const DELIVERY_REQUIREMENT: DeliveryRequirement = DeliveryRequirement::ReliableSequenced(None);
+pub const DELIVERY_REQUIREMENT: DeliveryRequirement = DeliveryRequirement::Unreliable;
 pub const URGENCY_REQUIREMENT: UrgencyRequirement = UrgencyRequirement::OnTick;
 
 fn main() -> amethyst::Result<()> {
@@ -26,11 +26,11 @@ fn main() -> amethyst::Result<()> {
     rtn
 }
 
-fn create_laminar_config() -> LaminarConfig {
+fn create_laminar_config(heartbeat_interval: Option<Duration>) -> LaminarConfig {
     LaminarConfig {
         blocking_mode: false,
         idle_connection_timeout: Duration::from_secs(3),
-        heartbeat_interval: Some(Duration::from_secs(1)),
+        heartbeat_interval,
         max_packet_size: (16 * 1024) as usize,
         max_fragments: 16 as u8,
         fragment_size: 1024,

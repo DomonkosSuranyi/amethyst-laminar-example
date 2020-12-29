@@ -1,18 +1,19 @@
 use amethyst::prelude::*;
-use amethyst::network::simulation::laminar::{LaminarSocket, LaminarConfig, LaminarNetworkBundle};
+use amethyst::network::simulation::laminar::{LaminarSocket, LaminarNetworkBundle};
 use amethyst::utils::application_root_dir;
 use amethyst::core::SystemBundle;
 use amethyst::core::ecs::{DispatcherBuilder, System, ReaderId, Write, Read};
-use amethyst::network::simulation::{NetworkSimulationEvent, TransportResource, DeliveryRequirement, UrgencyRequirement};
+use amethyst::network::simulation::{NetworkSimulationEvent, TransportResource};
 use amethyst::core::ecs::shrev::EventChannel;
 use amethyst::core::ecs::shred::SystemData;
 use log::{info, error};
+use std::time::Duration;
 
 pub const SERVER_ADDRESS: &str = "127.0.0.1:2222";
 
 pub fn start_server() -> amethyst::Result<()> {
     // To use default laminar config you can simply use `LaminarSocket::bind(SERVER_ADDRESS)`
-    let socket = LaminarSocket::bind_with_config(SERVER_ADDRESS, crate::create_laminar_config())?;
+    let socket = LaminarSocket::bind_with_config(SERVER_ADDRESS, crate::create_laminar_config(Some(Duration::from_secs(1))))?;
     let game_data = GameDataBuilder::default()
         .with_bundle(LaminarNetworkBundle::new(Some(socket)))?
         .with_bundle(ServerSystemBundle)?;

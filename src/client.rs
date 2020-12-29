@@ -1,18 +1,19 @@
-use amethyst::network::simulation::laminar::{LaminarConfig, LaminarSocket, LaminarNetworkBundle};
+use amethyst::network::simulation::laminar::{LaminarSocket, LaminarNetworkBundle};
 use amethyst::prelude::*;
 use amethyst::utils::application_root_dir;
-use amethyst::network::simulation::{DeliveryRequirement, UrgencyRequirement, NetworkSimulationEvent, NetworkSimulationTime, TransportResource};
+use amethyst::network::simulation::{NetworkSimulationEvent, NetworkSimulationTime, TransportResource};
 use amethyst::core::ecs::{System, Read, Write, ReaderId, DispatcherBuilder};
 use amethyst::core::{Time, SystemBundle};
 use amethyst::core::ecs::shrev::EventChannel;
 use amethyst::core::ecs::shred::SystemData;
 use log::{info, error};
+use std::time::Duration;
 
 const CLIENT_ADDRESS: &str = "127.0.0.1:3455";
 
 pub fn start_client() -> amethyst::Result<()> {
     // To use default laminar config you can simply use `LaminarSocket::bind(CLIENT_ADDRESS)`
-    let socket = LaminarSocket::bind_with_config(CLIENT_ADDRESS, crate::create_laminar_config())?;
+    let socket = LaminarSocket::bind_with_config(CLIENT_ADDRESS, crate::create_laminar_config(Some(Duration::from_secs(1))))?;
     let game_data = GameDataBuilder::default()
         .with_bundle(LaminarNetworkBundle::new(Some(socket)))?
         .with_bundle(ClientSystemBundle)?;
@@ -75,22 +76,21 @@ impl<'a> System<'a> for ClientSystem {
         let abs_secs = time.absolute_time_seconds();
         if abs_secs > 5 as f64 && abs_secs < 10 as f64 {
             info!("Waiting... time: {}", abs_secs);
-            return
-        }
+        } else {
+            for frame in sim_time.sim_frames_to_run() {
+                info!("Sending message for sim frame {}.", frame);
+                let payload = format!(
+                    "CL: sim_frame:{},abs_time:{}",
+                    frame,
+                    time.absolute_time_seconds()
+                );
 
-        for frame in sim_time.sim_frames_to_run() {
-            info!("Sending message for sim frame {}.", frame);
-            let payload = format!(
-                "CL: sim_frame:{},abs_time:{}",
-                frame,
-                time.absolute_time_seconds()
-            );
-
-            net.send_with_requirements(
-                server_addr,
-                payload.as_bytes(),
-                crate::DELIVERY_REQUIREMENT,
-                crate::URGENCY_REQUIREMENT);
+                net.send_with_requirements(
+                    server_addr,
+                    payload.as_bytes(),
+                    crate::DELIVERY_REQUIREMENT,
+                    crate::URGENCY_REQUIREMENT);
+            }
         }
 
         for event in event.read(&mut self.reader) {
