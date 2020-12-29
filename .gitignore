@@ -1,1 +1,6 @@
 /target
+*.swp
+Cargo.lock
+
+.idea
+*.iml
